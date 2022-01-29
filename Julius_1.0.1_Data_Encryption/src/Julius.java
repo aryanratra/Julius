@@ -1,16 +1,11 @@
 public class Julius
 {
+	//MyFrame GUIFrame;
 	public void GUI()
 	{
 		new SplashScreen();
 		new MyFrame();
-		
-	}
-	
-	
-	public void SelectFiles()
-	{
-		System.out.print("Function run");
+		//new CheckClass();
 	}
 	
 	public static void main(String args[])
@@ -21,3 +16,4 @@ public class Julius
 	}
 
 }
+ 

@@ -1,10 +1,10 @@
 /* This class is used to make the splash screen.
  * The loading bar is just for decoration and serves no real purpose.
  * The Cover Design is a .png file and is called 'SplashScreen_01.png'.
- * Another version of the 'SplashScreen_01.png', which does not use the
- *  circuit lines, is called 'SplashScreen_02.png'.
- * To change it to the latter version, simply replace 'SplashScreen_01.png'
- * to 'SplashScreen_02.png' in line - 'Icon splash_img= new ImageIcon("icons/SplashScreen_02.png");'.
+ * Another version of the 'SplashScreen_00.png', which does not use the
+ *  circuit lines, is called 'SplashScreen_01.png'.
+ * To change it to the latter version, simply replace 'SplashScreen_00.png'
+ * to 'SplashScreen_01.png' in line - 'Icon splash_img= new ImageIcon("icons/SplashScreen_01.png");'.
  * To overlay the JProgressBar over the JLabel, I have used the JLayeredPane and added both the
  * components using the .add() function.
  * The resolution of the SplashScreen is 1000 x 700 and can't be changed.
@@ -26,11 +26,12 @@ public class SplashScreen extends JWindow
 	JFrame frame = new JFrame();
 	JProgressBar bar = new JProgressBar();
 	JLayeredPane layeredPane = new JLayeredPane();
+	ImageIcon splash_icon;
 	
 public SplashScreen()
   {
 	
-	Icon splash_img= new ImageIcon("icons/SplashScreen_02.png");
+	Icon splash_img= new ImageIcon("icons/SplashScreen_00.png");
     JLabel label = new JLabel(splash_img);
     label.setBounds(0, 0, 1000, 700);
 	
@@ -47,6 +48,9 @@ public SplashScreen()
 	bar.setOpaque(false);
 	bar.setForeground(new Color(80, 80, 80));
 	
+	
+	splash_icon = new ImageIcon("icons/Favicon.png");
+	frame.setIconImage(splash_icon.getImage());
 
 	frame.add(layeredPane);
 	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -69,7 +73,7 @@ public SplashScreen()
 			bar.setValue(counter);
 			try
 		    {
-		        Thread.sleep(2);
+		        Thread.sleep(30);//Original value is 30
 		    }
 		    catch(InterruptedException e)
 		    {
@@ -80,7 +84,7 @@ public SplashScreen()
 		bar.setString("Loading...");
 		try
 	    {
-	        Thread.sleep(500);
+	        Thread.sleep(500);//Original value is 500
 	    }
 	    catch(InterruptedException e)
 	    {
@@ -89,7 +93,7 @@ public SplashScreen()
 		bar.setString("Creating Window...");
 		try
 	    {
-	        Thread.sleep(700);
+	        Thread.sleep(700);//Original value is 700
 	    }
 	    catch(InterruptedException e)
 	    {
