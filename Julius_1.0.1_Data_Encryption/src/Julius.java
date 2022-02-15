@@ -3,9 +3,8 @@ public class Julius
 	//MyFrame GUIFrame;
 	public void GUI()
 	{
-		new SplashScreen();
+		// new SplashScreen();
 		new MyFrame();
-		//new CheckClass();
 	}
 	
 	public static void main(String args[])
