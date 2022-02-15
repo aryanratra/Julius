@@ -64,21 +64,4 @@ public class DES
 		out.close();
 		in.close();
 	}
-	
-	
-//	public static void main(String args[])
-//	{
-//		File plaintext = new File("D:\\Aryan Ratra_Resume.pdf");
-//		File encrypted = new File("D:\\En_Aryan Ratra_Resume.pdf");
-//		File decrypted = new File("D:\\De_Aryan Ratra_Resume.pdf");
-//		
-//		try {
-//			encryptDecrypt("12345678", Cipher.DECRYPT_MODE, encrypted, decrypted);
-//			System.out.println("Decryption Complete");
-//		} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException
-//				| IOException | InvalidAlgorithmParameterException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//	}
 }

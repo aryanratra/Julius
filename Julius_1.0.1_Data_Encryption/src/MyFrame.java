@@ -1,5 +1,5 @@
-// import javax.crypto.Cipher;
-// import javax.crypto.NoSuchPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -22,17 +22,18 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-// import java.security.InvalidAlgorithmParameterException;
-// import java.security.InvalidKeyException;
-// import java.security.NoSuchAlgorithmException;
-// import java.security.spec.InvalidKeySpecException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 
 import java.io.File;
-// import java.io.FileNotFoundException;
-// import java.io.IOException;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import com.sun.tools.javac.Main;
-// import des.DES;
+import des.DES;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -52,6 +53,8 @@ public class MyFrame extends JFrame implements ActionListener {
 	ButtonGroup algoButtonG;
 	JPasswordField keyField1, keyField2;
 	JTextField addBar;
+	Path path;
+	Path filename;
 
 	MyFrame() {
 
@@ -97,7 +100,7 @@ public class MyFrame extends JFrame implements ActionListener {
 		en_button.setText("ENCRYPT");
 		en_button.setFocusable(false);
 		en_button.setToolTipText(
-				"<html>Convert your files into a secret code using different <br>encrypting algorithms like AES, RSA, Vigen�re Cipher etc.");
+				"<html>Convert your files into a secret code using different <br>encrypting algorithms like AES, RSA, Vigenère Cipher etc.");
 		en_button.setHorizontalTextPosition(JButton.CENTER);
 		en_button.setVerticalTextPosition(JButton.CENTER);
 		en_button.setFont(new Font("Metropolis", Font.BOLD, 25));
@@ -210,7 +213,7 @@ public class MyFrame extends JFrame implements ActionListener {
 		RSAButton.addActionListener(this);
 		RSAButton.setFont(new Font("Metropolis", Font.TRUETYPE_FONT, 14));
 
-		VignereButton = new JRadioButton("Vigen�re cipher");
+		VignereButton = new JRadioButton("Vigenère cipher");
 		VignereButton.setOpaque(false);
 		// VignereButton.setBackground(new Color(40,40,40));
 		VignereButton.setForeground(new Color(255, 255, 255));
@@ -358,7 +361,7 @@ public class MyFrame extends JFrame implements ActionListener {
 
 		if (response == JFileChooser.APPROVE_OPTION) {
 			File destAdd = destChooser.getSelectedFile();
-			str_add = destAdd.getAbsolutePath();
+			str_add = destAdd.getAbsolutePath()+"\\";
 			addBar.setText(str_add);
 		}
 	}
@@ -407,6 +410,15 @@ public class MyFrame extends JFrame implements ActionListener {
 		this.getContentPane().removeAll();
 		this.repaint();
 		CenterPanel.removeAll();
+		encFileCreator();
+		new DES();
+		try {
+		DES.encryptDecrypt(str_key, Cipher.ENCRYPT_MODE, src_file, en_file);
+		} catch (InvalidKeyException | NoSuchAlgorithmException |
+		InvalidKeySpecException | NoSuchPaddingException
+		| InvalidAlgorithmParameterException | IOException e) {
+		e.printStackTrace();
+		}
 		System.out.println("DES Success.");
 	}
 
@@ -436,6 +448,13 @@ public class MyFrame extends JFrame implements ActionListener {
 		this.repaint();
 		CenterPanel.removeAll();
 		System.out.println("Ceasar Success.");
+	}
+
+	public void encFileCreator()
+	{
+		path = Paths.get(src_file.getAbsolutePath());
+        filename = path.getFileName();
+		en_file = new File(str_add + ("Enc_" + filename.toString()));
 	}
 
 	public void JRadioButton_Look() {
