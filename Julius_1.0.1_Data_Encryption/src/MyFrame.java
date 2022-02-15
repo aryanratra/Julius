@@ -41,10 +41,11 @@ public class MyFrame extends JFrame implements ActionListener {
 	private static final long serialVersionUID = 1L;
 
 	String str_key, str_add;
+	int err;
 	ImageIcon frame_icon, title_icon, copyright_icon;
 	JButton en_button, de_button, ok_button, cancel_button, browse_button,submit_button;
 	File en_file, src_file, dec_file;
-	JLabel title, copyright, keyLabel1, keyLabel2, addLabel;
+	JLabel title, copyright, keyLabel1, keyLabel2, keyError,addLabel;
 	JPanel TopPanel, BottomPanel, LeftPanel, RightPanel, CenterPanel;
 	JFileChooser fileChooser, destChooser;
 	JRadioButton DESButton, AESButton, RSAButton, VignereButton, HashButton, CeasarButton;
@@ -54,6 +55,7 @@ public class MyFrame extends JFrame implements ActionListener {
 
 	MyFrame() {
 
+		err = 0;
 		str_key = "password";
 		str_add = "D:\\";
 		ComponentCreator();
@@ -124,7 +126,7 @@ public class MyFrame extends JFrame implements ActionListener {
 		ok_button.setFont(new Font("Metropolis", Font.BOLD, 16));
 
 		cancel_button = new JButton();
-		cancel_button.setBounds(510, 550, 120, 30);
+		cancel_button.setBounds(502, 550, 120, 30);
 		cancel_button.setBackground(new Color(80, 80, 80));
 		cancel_button.setForeground(new Color(255, 255, 255));
 		cancel_button.addActionListener(this);
@@ -135,7 +137,7 @@ public class MyFrame extends JFrame implements ActionListener {
 		cancel_button.setFont(new Font("Metropolis", Font.BOLD, 16));
 
 		submit_button = new JButton();
-		submit_button.setBounds(400, 550, 90, 30);
+		submit_button.setBounds(392, 550, 90, 30);
 		submit_button.setBackground(new Color(80, 80, 80));
 		submit_button.setForeground(new Color(255, 255, 255));
 		submit_button.addActionListener(this);
@@ -258,6 +260,7 @@ public class MyFrame extends JFrame implements ActionListener {
 		keyLabel1 = new JLabel("Enter Key:");
 		keyLabel1.setBounds(292, 20, 200, 25);
 		keyLabel1.setForeground(new Color(255, 255, 255));
+		keyLabel1.setFont(new Font("Metropolis", Font.TRUETYPE_FONT, 14));
 
 		keyField1 = new JPasswordField();
 		keyField1.setBounds(292, 50, 400, 25);
@@ -265,6 +268,7 @@ public class MyFrame extends JFrame implements ActionListener {
 		keyLabel2 = new JLabel("Re-Enter Key:");
 		keyLabel2.setBounds(292, 130, 200, 25);
 		keyLabel2.setForeground(new Color(255, 255, 255));
+		keyLabel2.setFont(new Font("Metropolis", Font.TRUETYPE_FONT, 14));;
 
 		keyField2 = new JPasswordField();
 		keyField2.setBounds(292, 160, 400, 25);
@@ -272,6 +276,12 @@ public class MyFrame extends JFrame implements ActionListener {
 		addLabel = new JLabel("File Destination Path:");
 		addLabel.setBounds(292, 240, 200, 25);
 		addLabel.setForeground(new Color(255, 255, 255));
+		addLabel.setFont(new Font("Metropolis", Font.TRUETYPE_FONT, 14));
+
+		keyError = new JLabel("Keys Do Not Match");
+		keyError.setBounds(292, 200, 200, 25);
+		keyError.setForeground(new Color(255, 0, 0));
+		keyError.setFont(new Font("Metropolis", Font.TRUETYPE_FONT, 14));
 
 		addBar = new JTextField("D:\\");
 		addBar.setBounds(292, 270, 400, 25);
@@ -349,6 +359,7 @@ public class MyFrame extends JFrame implements ActionListener {
 		if (response == JFileChooser.APPROVE_OPTION) {
 			File destAdd = destChooser.getSelectedFile();
 			str_add = destAdd.getAbsolutePath();
+			addBar.setText(str_add);
 		}
 	}
 
@@ -365,16 +376,16 @@ public class MyFrame extends JFrame implements ActionListener {
 	}
 
 	public void keyAdd() {
-		this.getContentPane().removeAll();
-		this.repaint();
-		CenterPanel.removeAll();
-
 		CenterPanel.setLayout(null);
 		CenterPanel.add(keyLabel1);
 		CenterPanel.add(keyField1);
 		CenterPanel.add(keyLabel2);
 		CenterPanel.add(keyField2);
 		CenterPanel.add(addLabel);
+		if(err!=0)
+		{
+			CenterPanel.add(keyError);
+		}
 		CenterPanel.add(addBar);
 		CenterPanel.add(browse_button);
 		CenterPanel.add(submit_button);
@@ -471,6 +482,9 @@ public class MyFrame extends JFrame implements ActionListener {
 		if (AESButton.isSelected() || DESButton.isSelected() || RSAButton.isSelected() || VignereButton.isSelected()
 				|| HashButton.isSelected() || CeasarButton.isSelected()) {
 			if (e.getSource() == ok_button) {
+				this.getContentPane().removeAll();
+				this.repaint();
+				CenterPanel.removeAll();
 				keyAdd();
 			}
 		}
@@ -485,53 +499,57 @@ public class MyFrame extends JFrame implements ActionListener {
 			char keyCh1[] = keyField1.getPassword();
 			char keyCh2[] = keyField2.getPassword();
 
-			if (keyCh1.length == keyCh2.length) // Check length of keys
-                {
-                    for (int i = 0; i < keyCh1.length; i++) // Check if keys are equal
-                    {
-                        if (keyCh1[i] == keyCh2[i])
-                            continue;
+			err = 0;
+			for (int i = 0; i < keyCh1.length; i++) // Check if keys are equal
+			{
+				if (keyCh1[i] == keyCh2[i])
+					continue;
 
-                        else {
-                            System.out.println("Keys do not match.");
-                            System.exit(0);
-                        }
-                    }
-                    str_key = new String(keyCh1);
-                } else {
-                    System.out.println("Keys do not match.");
-                    System.exit(0);
-                }
-
-
-			System.out.println(str_key);
-			System.out.println(str_add);
-
-			if (AESButton.isSelected() == true) {
-				System.out.println("AES Chosen.");
-				AESciph();
+				else {
+					err++;
+				}
 			}
-			if (DESButton.isSelected() == true) {
-				System.out.println("DES Chosen.");
-				DESciph();
+			if(err==0)
+			{
+				str_key = new String(keyCh1);
+				System.out.println(str_key);
+				System.out.println(str_add);
+	
+				if (AESButton.isSelected() == true) {
+					System.out.println("AES Chosen.");
+					AESciph();
+				}
+				if (DESButton.isSelected() == true) {
+					System.out.println("DES Chosen.");
+					DESciph();
+				}
+				if (RSAButton.isSelected() == true) {
+					System.out.println("RSA Chosen.");
+					RSAciph();
+				}
+				if (VignereButton.isSelected() == true) {
+					System.out.println("Vignere Chosen.");
+					Vignereciph();
+				}
+				if (HashButton.isSelected() == true) {
+					System.out.println("Hash Chosen.");
+					Hashciph();
+				}
+				if (CeasarButton.isSelected() == true) {
+					System.out.println("Ceasar Chosen.");
+					Ceasarciph();
+				}
 			}
-			if (RSAButton.isSelected() == true) {
-				System.out.println("RSA Chosen.");
-				RSAciph();
+			else
+			{
+				System.out.println("Keys do not match.");
+				keyField1.setText("");
+				keyField2.setText("");
+				this.getContentPane().removeAll();
+				this.repaint();
+				CenterPanel.removeAll();
+				keyAdd();
 			}
-			if (VignereButton.isSelected() == true) {
-				System.out.println("Vignere Chosen.");
-				Vignereciph();
-			}
-			if (HashButton.isSelected() == true) {
-				System.out.println("Hash Chosen.");
-				Hashciph();
-			}
-			if (CeasarButton.isSelected() == true) {
-				System.out.println("Ceasar Chosen.");
-				Ceasarciph();
-			}
-
 		}
 		if (e.getSource() == cancel_button) {
 			algoButtonG.clearSelection();
