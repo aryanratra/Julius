@@ -5,10 +5,13 @@ import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+// import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -29,8 +32,12 @@ import java.security.spec.InvalidKeySpecException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 
 import com.sun.tools.javac.Main;
 import des.DES;
@@ -41,20 +48,20 @@ public class MyFrame extends JFrame implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
 
-	String str_key, str_add;
+	String str_key, str_add, encAlgo, mode;
 	int err;
 	ImageIcon frame_icon, title_icon, copyright_icon;
-	JButton en_button, de_button, ok_button, cancel_button, browse_button,submit_button;
+	JButton en_button, de_button, ok_button, cancel_button, browse_button, submit_button;
 	File en_file, src_file, dec_file;
-	JLabel title, copyright, keyLabel1, keyLabel2, keyError,addLabel;
+	JLabel title, copyright, keyLabel1, keyLabel2, keyError, addLabel, detectLabel, algoLabel;
 	JPanel TopPanel, BottomPanel, LeftPanel, RightPanel, CenterPanel;
 	JFileChooser fileChooser, destChooser;
 	JRadioButton DESButton, AESButton, RSAButton, VignereButton, HashButton, CeasarButton;
 	ButtonGroup algoButtonG;
 	JPasswordField keyField1, keyField2;
 	JTextField addBar;
-	Path path;
-	Path filename;
+	JProgressBar progBar;
+	Path path, filename;
 
 	MyFrame() {
 
@@ -248,16 +255,6 @@ public class MyFrame extends JFrame implements ActionListener {
 		algoButtonG.add(HashButton);
 		algoButtonG.add(CeasarButton);
 
-		CenterPanel.setLayout(null);
-		CenterPanel.add(AESButton);
-		CenterPanel.add(DESButton);
-		CenterPanel.add(RSAButton);
-		CenterPanel.add(VignereButton);
-		CenterPanel.add(HashButton);
-		CenterPanel.add(CeasarButton);
-		CenterPanel.add(ok_button);
-		CenterPanel.add(cancel_button);
-
 		JRadioButton_Look();
 
 		keyLabel1 = new JLabel("Enter Key:");
@@ -271,7 +268,8 @@ public class MyFrame extends JFrame implements ActionListener {
 		keyLabel2 = new JLabel("Re-Enter Key:");
 		keyLabel2.setBounds(292, 130, 200, 25);
 		keyLabel2.setForeground(new Color(255, 255, 255));
-		keyLabel2.setFont(new Font("Metropolis", Font.TRUETYPE_FONT, 14));;
+		keyLabel2.setFont(new Font("Metropolis", Font.TRUETYPE_FONT, 14));
+		;
 
 		keyField2 = new JPasswordField();
 		keyField2.setBounds(292, 160, 400, 25);
@@ -300,6 +298,24 @@ public class MyFrame extends JFrame implements ActionListener {
 		browse_button.setVerticalTextPosition(JButton.BOTTOM);
 		browse_button.setFont(new Font("Metropolis", Font.BOLD, 12));
 
+		progBar = new JProgressBar();
+		progBar.setValue(0);
+		progBar.setBounds(300, 500, 400, 20);
+		progBar.setStringPainted(true);
+		progBar.setFont(new Font("Metropolis", Font.BOLD, 12));
+		progBar.setOpaque(false);
+		progBar.setForeground(new Color(80, 80, 80));
+
+		detectLabel = new JLabel("Detected Algorithm...", SwingConstants.CENTER);
+		detectLabel.setBounds(340, 20, 300, 30);
+		detectLabel.setForeground(new Color(255, 255, 255));
+		detectLabel.setFont(new Font("Metropolis", Font.TRUETYPE_FONT, 28));
+
+		algoLabel = new JLabel("", SwingConstants.CENTER);
+		algoLabel.setBounds(340, 70, 300, 30);
+		algoLabel.setForeground(new Color(255, 255, 255));
+		algoLabel.setFont(new Font("Metropolis", Font.TRUETYPE_FONT, 28));
+
 	}
 
 	public void TaskSelection() {
@@ -327,7 +343,7 @@ public class MyFrame extends JFrame implements ActionListener {
 
 		if (response == JFileChooser.APPROVE_OPTION) {
 			src_file = new File(fileChooser.getSelectedFile().getAbsolutePath());
-			algroithmChoose();
+			AlgorithmChooser();
 		} else
 			TaskSelection();
 
@@ -344,9 +360,104 @@ public class MyFrame extends JFrame implements ActionListener {
 
 		if (response == JFileChooser.APPROVE_OPTION) {
 			en_file = new File(fileChooser.getSelectedFile().getAbsolutePath());
-			algorithmDetect();
+			try {
+				this.getContentPane().removeAll();
+				this.repaint();
+				AlgorithmDetector();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} else
 			TaskSelection();
+	}
+
+	public void AlgorithmChooser() {
+		CenterPanel.setLayout(null);
+		CenterPanel.add(AESButton);
+		CenterPanel.add(DESButton);
+		CenterPanel.add(RSAButton);
+		CenterPanel.add(VignereButton);
+		CenterPanel.add(HashButton);
+		CenterPanel.add(CeasarButton);
+		CenterPanel.add(ok_button);
+		CenterPanel.add(cancel_button);
+		this.getContentPane().removeAll();
+		this.repaint();
+		this.add(CenterPanel, BorderLayout.CENTER);
+		this.add(TopPanel, BorderLayout.NORTH);
+		this.add(BottomPanel, BorderLayout.SOUTH);
+	}
+
+	public void AlgorithmDetector() throws IOException, InterruptedException {
+		Path enFilePath = Paths.get(en_file.getAbsolutePath());
+		UserDefinedFileAttributeView view = Files.getFileAttributeView(enFilePath, UserDefinedFileAttributeView.class);
+		String name = "user.encryption";
+		ByteBuffer buf = ByteBuffer.allocate(view.size(name));
+		view.read(name, buf);
+		buf.flip();
+		encAlgo = Charset.defaultCharset().decode(buf).toString();
+
+		System.out.println(encAlgo);
+		keyLabel2.setText("Enter Key:");
+		algoLabel.setText(encAlgo);
+		CenterPanel.setLayout(null);
+
+		CenterPanel.add(detectLabel);
+		CenterPanel.add(algoLabel);
+		CenterPanel.add(keyLabel2);
+		CenterPanel.add(keyField2);
+		CenterPanel.add(addLabel);
+		CenterPanel.add(addBar);
+		CenterPanel.add(browse_button);
+		CenterPanel.add(submit_button);
+		CenterPanel.add(cancel_button);
+		this.getContentPane().removeAll();
+		this.repaint();
+		this.add(CenterPanel, BorderLayout.CENTER);
+		this.add(TopPanel, BorderLayout.NORTH);
+		this.add(BottomPanel, BorderLayout.SOUTH);
+
+		if (encAlgo.equalsIgnoreCase("AES")) {
+			AESButton.setSelected(true);
+		}
+		if (encAlgo.equalsIgnoreCase("DES")) {
+			DESButton.setSelected(true);
+		}
+		if (encAlgo.equalsIgnoreCase("RSA")) {
+			RSAButton.setSelected(true);
+		}
+		if (encAlgo.equalsIgnoreCase("Vignere")) {
+			VignereButton.setSelected(true);
+		}
+		if (encAlgo.equalsIgnoreCase("Hash")) {
+			HashButton.setSelected(true);
+		}
+		if (encAlgo.equalsIgnoreCase("Ceasar")) {
+			CeasarButton.setSelected(true);
+		}
+	}
+
+	public void KeyAddInput() {
+		CenterPanel.setLayout(null);
+		CenterPanel.add(keyLabel1);
+		CenterPanel.add(keyField1);
+		CenterPanel.add(keyLabel2);
+		CenterPanel.add(keyField2);
+		CenterPanel.add(addLabel);
+		if (err != 0) {
+			CenterPanel.add(keyError);
+		}
+		CenterPanel.add(addBar);
+		CenterPanel.add(browse_button);
+		CenterPanel.add(submit_button);
+		CenterPanel.add(cancel_button);
+
+		this.add(CenterPanel, BorderLayout.CENTER);
+		this.add(TopPanel, BorderLayout.NORTH);
+		this.add(BottomPanel, BorderLayout.SOUTH);
 	}
 
 	public void DestSelector()// Opens JFileChooser to select output destination
@@ -361,42 +472,12 @@ public class MyFrame extends JFrame implements ActionListener {
 
 		if (response == JFileChooser.APPROVE_OPTION) {
 			File destAdd = destChooser.getSelectedFile();
-			str_add = destAdd.getAbsolutePath()+"\\";
+			str_add = destAdd.getAbsolutePath();
+			if (str_add.charAt(str_add.length() - 1) != '\\') {
+				str_add = str_add + "\\";
+			}
 			addBar.setText(str_add);
 		}
-	}
-
-	public void algroithmChoose() {
-		this.getContentPane().removeAll();
-		this.repaint();
-		this.add(CenterPanel, BorderLayout.CENTER);
-		this.add(TopPanel, BorderLayout.NORTH);
-		this.add(BottomPanel, BorderLayout.SOUTH);
-	}
-
-	public void algorithmDetect() {
-		System.out.print("Detecting algorithm");
-	}
-
-	public void keyAdd() {
-		CenterPanel.setLayout(null);
-		CenterPanel.add(keyLabel1);
-		CenterPanel.add(keyField1);
-		CenterPanel.add(keyLabel2);
-		CenterPanel.add(keyField2);
-		CenterPanel.add(addLabel);
-		if(err!=0)
-		{
-			CenterPanel.add(keyError);
-		}
-		CenterPanel.add(addBar);
-		CenterPanel.add(browse_button);
-		CenterPanel.add(submit_button);
-		CenterPanel.add(cancel_button);
-
-		this.add(CenterPanel, BorderLayout.CENTER);
-		this.add(TopPanel, BorderLayout.NORTH);
-		this.add(BottomPanel, BorderLayout.SOUTH);
 	}
 
 	public void AESciph() {
@@ -410,16 +491,28 @@ public class MyFrame extends JFrame implements ActionListener {
 		this.getContentPane().removeAll();
 		this.repaint();
 		CenterPanel.removeAll();
-		encFileCreator();
-		new DES();
-		try {
-		DES.encryptDecrypt(str_key, Cipher.ENCRYPT_MODE, src_file, en_file);
-		} catch (InvalidKeyException | NoSuchAlgorithmException |
-		InvalidKeySpecException | NoSuchPaddingException
-		| InvalidAlgorithmParameterException | IOException e) {
-		e.printStackTrace();
+		if (mode.equalsIgnoreCase("ENCRYPT")) {
+			EncFileCreator();
+			new DES();
+			try {
+				DES.encryptDecrypt(str_key, Cipher.ENCRYPT_MODE, src_file, en_file);
+			} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException
+					| InvalidAlgorithmParameterException | IOException e) {
+				e.printStackTrace();
+			}
+			System.out.println("DES Encryption Successful...");
+			MetaData("DES");
+		} else if (mode.equalsIgnoreCase("DECRYPT")) {
+			DecFileCreator();
+			new DES();
+			try {
+				DES.encryptDecrypt(str_key, Cipher.DECRYPT_MODE, en_file, dec_file);
+			} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException
+					| InvalidAlgorithmParameterException | IOException e) {
+				e.printStackTrace();
+			}
+			System.out.println("DES Decryption Successful...");
 		}
-		System.out.println("DES Success.");
 	}
 
 	public void RSAciph() {
@@ -450,11 +543,33 @@ public class MyFrame extends JFrame implements ActionListener {
 		System.out.println("Ceasar Success.");
 	}
 
-	public void encFileCreator()
-	{
+	public void EncFileCreator() {
 		path = Paths.get(src_file.getAbsolutePath());
-        filename = path.getFileName();
+		filename = path.getFileName();
 		en_file = new File(str_add + ("Enc_" + filename.toString()));
+	}
+
+	public void DecFileCreator() {
+		path = Paths.get(en_file.getAbsolutePath());
+		filename = path.getFileName();
+		if (filename.toString().substring(0, 4).equalsIgnoreCase("Enc_")) {
+			dec_file = new File(str_add + ("Dec_" + filename.toString().substring(4)));
+		}
+		else
+		{
+			dec_file = new File(str_add + ("Dec_" + filename.toString()));
+		}
+	}
+
+	public void MetaData(String enc) {
+		Path enFilePath = Paths.get(en_file.getAbsolutePath());
+
+		UserDefinedFileAttributeView view = Files.getFileAttributeView(enFilePath, UserDefinedFileAttributeView.class);
+		try {
+			view.write("user.encryption", Charset.defaultCharset().encode(enc));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void JRadioButton_Look() {
@@ -491,10 +606,12 @@ public class MyFrame extends JFrame implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == en_button) {
+			mode = "ENCRYPT";
 			SrcFileSelector();
 		}
 
 		if (e.getSource() == de_button) {
+			mode = "DECRYPT";
 			EnFileSelector();
 		}
 
@@ -504,36 +621,38 @@ public class MyFrame extends JFrame implements ActionListener {
 				this.getContentPane().removeAll();
 				this.repaint();
 				CenterPanel.removeAll();
-				keyAdd();
+				KeyAddInput();
 			}
 		}
 
-		if(e.getSource() == browse_button)
-		{
+		if (e.getSource() == browse_button) {
 			DestSelector();
 		}
-
 
 		if (e.getSource() == submit_button) {
 			char keyCh1[] = keyField1.getPassword();
 			char keyCh2[] = keyField2.getPassword();
 
-			err = 0;
-			for (int i = 0; i < keyCh1.length; i++) // Check if keys are equal
-			{
-				if (keyCh1[i] == keyCh2[i])
-					continue;
+			if (mode.equalsIgnoreCase("DECRYPT")) {
+				err = 0;
+			} else {
+				err = 0;
+				for (int i = 0; i < keyCh1.length; i++) // Check if keys are equal
+				{
+					if (keyCh1[i] == keyCh2[i])
+						continue;
 
-				else {
-					err++;
+					else {
+						err++;
+					}
 				}
 			}
-			if(err==0)
-			{
-				str_key = new String(keyCh1);
+
+			if (err == 0) {
+				str_key = new String(keyCh2);
 				System.out.println(str_key);
 				System.out.println(str_add);
-	
+
 				if (AESButton.isSelected() == true) {
 					System.out.println("AES Chosen.");
 					AESciph();
@@ -558,16 +677,14 @@ public class MyFrame extends JFrame implements ActionListener {
 					System.out.println("Ceasar Chosen.");
 					Ceasarciph();
 				}
-			}
-			else
-			{
+			} else {
 				System.out.println("Keys do not match.");
 				keyField1.setText("");
 				keyField2.setText("");
 				this.getContentPane().removeAll();
 				this.repaint();
 				CenterPanel.removeAll();
-				keyAdd();
+				KeyAddInput();
 			}
 		}
 		if (e.getSource() == cancel_button) {
